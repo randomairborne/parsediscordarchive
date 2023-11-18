@@ -12,6 +12,7 @@ struct Reply {
 
 #[derive(serde::Serialize, Clone)]
 struct Message {
+    id: u64,
     content: String,
     timestamp: chrono::DateTime<Utc>,
     author: u64,
@@ -19,8 +20,11 @@ struct Message {
     reference: Option<u64>,
 }
 
+#[serde_as]
 #[derive(serde::Deserialize)]
 struct DiscordMessage {
+    #[serde_as(as = "DisplayFromStr")]
+    id: u64,
     content: String,
     timestamp: chrono::DateTime<Utc>,
     author: DiscordAuthor,
@@ -76,6 +80,7 @@ fn main() {
         let mut messages: Vec<Message> = data
             .into_iter()
             .map(|v| Message {
+                id: v.id,
                 author: v.author.id,
                 content: v.content,
                 timestamp: v.timestamp,
@@ -121,8 +126,16 @@ fn get_prompt(messages: &[Message], index: usize, who: u64) -> Option<String> {
     let mut innerdex = index - 1;
     let reply = &messages[index];
     let mut outputs: Vec<String> = Vec::new();
+    if let Some(reference) = reply.reference {
+        for (reply_index, message) in messages[0..innerdex].iter().enumerate() {
+            if message.id == reference {
+                innerdex = reply_index;
+                break;
+            }
+        }
+    }
     while innerdex != 0
-        && index - innerdex <= 5
+        && outputs.len() < 5
         && messages[innerdex].author != who
         && (messages[innerdex].timestamp - reply.timestamp).num_minutes() < 10
     {
