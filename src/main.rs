@@ -126,10 +126,13 @@ fn get_prompt(messages: &[Message], index: usize, who: u64) -> Option<String> {
     let mut innerdex = index - 1;
     let reply = &messages[index];
     let mut outputs: Vec<String> = Vec::new();
+    let mut reference_time = reply.timestamp;
+
     if let Some(reference) = reply.reference {
         for (reply_index, message) in messages[0..innerdex].iter().enumerate() {
             if message.id == reference {
                 innerdex = reply_index;
+                reference_time = message.timestamp;
                 break;
             }
         }
@@ -137,7 +140,7 @@ fn get_prompt(messages: &[Message], index: usize, who: u64) -> Option<String> {
     while innerdex != 0
         && outputs.len() < 5
         && messages[innerdex].author != who
-        && (messages[innerdex].timestamp - reply.timestamp).num_minutes() < 10
+        && (messages[innerdex].timestamp - reference_time).num_minutes() <= 10
     {
         let prompt = &messages[innerdex];
         outputs.push(prompt.content.clone());
