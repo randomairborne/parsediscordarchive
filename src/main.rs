@@ -1,11 +1,7 @@
+use std::{fs::OpenOptions, path::PathBuf, time::Instant};
+
 use chrono::Utc;
 use serde::Deserialize;
-use std::fs::OpenOptions;
-use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::time::Instant;
-
 use serde_with::{serde_as, DisplayFromStr};
 
 #[derive(serde::Serialize, Clone)]
@@ -68,10 +64,11 @@ fn main() {
     let channel_files = channel_files(root_path);
     let parse_start = Instant::now();
     let total_files = channel_files.len();
-    let completed: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    let mut completed: usize = 0;
 
     for messages_json in channel_files {
-        let our_number = completed.fetch_add(1, Ordering::Relaxed) + 1;
+        let our_number = completed;
+        completed += 1;
         let start = Instant::now();
         println!("Starting parsing on {messages_json:?} ({our_number}/{total_files})");
         let file = OpenOptions::new().read(true).open(&messages_json).unwrap();
