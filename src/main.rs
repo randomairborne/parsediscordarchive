@@ -105,7 +105,7 @@ fn main() {
     let mut replies: Vec<Reply> = Vec::with_capacity(100_000);
     for channel in channels {
         for (index, message) in channel.iter().enumerate() {
-            if message.author != who {
+            if message.author != who || message.content.is_empty() {
                 continue;
             }
             let reply = message.content.clone();
@@ -143,8 +143,11 @@ fn get_prompt(messages: &[Message], index: usize, who: u64) -> Option<String> {
         && (messages[innerdex].timestamp - reference_time).num_minutes() <= 10
     {
         let prompt = &messages[innerdex];
-        outputs.push(prompt.content.clone());
         innerdex -= 1;
+        if prompt.content.is_empty() {
+            continue;
+        }
+        outputs.push(prompt.content.clone());
     }
     if outputs.is_empty() {
         None
